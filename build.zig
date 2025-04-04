@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+    const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
     const profiler_mod = b.addModule("profiler", .{ .root_source_file = b.path("src/profilers.zig") });
 
     const exe = b.addExecutable(.{

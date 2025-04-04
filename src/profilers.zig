@@ -20,22 +20,25 @@ pub const ProfilerNode = struct {
         self.stopTime = time.Instant.now() catch unreachable;
         return self;
     }
+    /// Prints report and stores result between start and stop
     pub fn report(self: *ProfilerNode) void {
-        // if (self.stopTime == undefined or self.startTime == undefined) {
-        //     print("Profiler was reset since then it has been restarted\n or it was never stopped\n", .{});
-        //     return;
-        // }
         print("Profiler Report =====================\n For profiler {s}\n", .{self.name});
         const stopTime = self.stopTime.since(self.startTime);
         print("Elapsed Time {d} ns\n", .{stopTime});
         self.reportList.*.append(stopTime) catch return;
     }
+
+    /// Resets timer params except for the reports array
     pub fn reset(self: *ProfilerNode) void {
         self.stopTime = undefined;
         self.startTime = undefined;
     }
 };
 
+/// Holds all allocated Profilers
+/// and is responsible for deallocating
+/// the individual profilers
+/// thread-safe
 pub const Profiler = struct {
     profilers: std.StringHashMap(*ProfilerNode),
     allocator: std.mem.Allocator,
@@ -46,6 +49,7 @@ pub const Profiler = struct {
         try profilers.ensureUnusedCapacity(1024);
         return Profiler{ .profilers = profilers, .allocator = allocator };
     }
+
     pub fn deinit(self: *Profiler) void {
         var iter = self.profilers.valueIterator();
         while (iter.next()) |value| {
@@ -56,7 +60,10 @@ pub const Profiler = struct {
         self.profilers.deinit();
     }
 
-    pub fn startTimer(self: *Profiler, name: []const u8) ?*ProfilerNode {
+    /// Creates and stores a profiler node onto a hashmap
+    /// Returns:
+    /// - `?*ProfilerNode` : the function returns a profiler node to start profiling
+    pub fn getProfiler(self: *Profiler, name: []const u8) ?*ProfilerNode {
         self.lock.lock();
         defer self.lock.unlock();
 
@@ -66,8 +73,7 @@ pub const Profiler = struct {
         list.* = std.ArrayList(u64).init(self.allocator);
         list.*.ensureUnusedCapacity(1024) catch return null;
         node.* = ProfilerNode.init(name, list);
-        self.profilers.putAssumeCapacity(name, node);
-
+        self.profilers.put(name, node) catch return null;
         return node;
     }
 };
