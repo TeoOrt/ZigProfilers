@@ -1,0 +1,15 @@
+.{
+    .name = "profiler",
+    .version = "1.0.0",
+    .dependecies = .{
+        .@"zig-speak" = .{
+            .url = "git+https://github.com/username/zig-speak/#HEAD",
+            .hash = "12202a...",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
